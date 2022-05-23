@@ -1,34 +1,21 @@
 import cv2 
 import face_recognition
 import numpy as np
+import os
 
+KNOWN_FACE_DIR = 'known'
+known_faces = [] 
+known_names = []
 
-cap = cv2.VideoCapture('assets/trumpwput.mp4')
+for file in os.listdir(KNOWN_FACE_DIR):
+    name = f'{file}'.split('.')[0]
+    image = face_recognition.load_image_file(f'{KNOWN_FACE_DIR}/{file}')
+    encoding = face_recognition.face_encodings(image)
+    known_faces.append(encoding)
+    known_names.append(name)
 
+cap = cv2.VideoCapture(0)
 
-obama_face = face_recognition.load_image_file('assets/obama.jpeg')
-putin_face = face_recognition.load_image_file('assets/vlad.jpeg')
-trump_face = face_recognition.load_image_file('assets/trump3.jpeg')
-obama_face_encoding = face_recognition.face_encodings(obama_face)[0]
-trump_face_encoding = face_recognition.face_encodings(trump_face)[0]
-putin_face_encoding = face_recognition.face_encodings(putin_face)[0]
-
-
-
-known_face_encodings = [
-    obama_face_encoding,
-    trump_face_encoding,
-    putin_face_encoding
-]
-known_face_names = [
-    "obama",
-    "Trump",
-    'putin'
-]
-
-face_locations = []
-face_encodings = []
-face_names = []
 process_this_frame = True
 
 while True:
@@ -44,18 +31,17 @@ while True:
         face_names = []
         for face_encoding in face_encodings:
 
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = "Unknown"
-            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            matches = face_recognition.compare_faces(known_faces, face_encoding)
+            face_distances = face_recognition.face_distance(known_faces, face_encoding)
+            print(face_distances)
             best_match_index = np.argmin(face_distances)
 
             if matches[best_match_index]:
-                name = known_face_names[best_match_index]
+                name = known_names[best_match_index]
 
-            face_names.append(name)
     process_this_frame = not process_this_frame
 
-    for (top, right, bottom, left), name in zip(face_locations, face_names):
+    for (top, right, bottom, left), name in zip(face_locations, known_names):
 
         top *= 4
         right *= 4
@@ -69,7 +55,7 @@ while True:
 
     cv2.imshow('Video', frame)
 
-    if cv2.waitKey(90) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
